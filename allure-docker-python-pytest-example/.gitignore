@@ -1,0 +1,5 @@
+/allure-results/*
+/allure-reports/*
+.pytest_cache
+/tests/__pycache__
+!.gitkeep
