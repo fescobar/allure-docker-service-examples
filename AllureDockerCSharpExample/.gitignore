@@ -1,0 +1,7 @@
+/allure-results/*
+/allure-reports/*
+/packages
+/.vs
+/AllureDockerCSharpExample/bin
+/AllureDockerCSharpExample/obj
+!.gitkeep
