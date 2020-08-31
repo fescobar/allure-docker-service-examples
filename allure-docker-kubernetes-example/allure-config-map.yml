@@ -6,4 +6,6 @@ metadata:
 data:
   CHECK_RESULTS_EVERY_SECONDS: NONE
   KEEP_HISTORY: "1"
+  URL_PREFIX: "/allure-api"
   TLS: "1"
+  SECURITY_ENABLED: "1"

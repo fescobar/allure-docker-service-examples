@@ -4,6 +4,8 @@ set -o xtrace
 
 kubectl delete deployment allure-deployment --namespace allure-docker-service
 kubectl delete configmap allure-config-map --namespace allure-docker-service
+kubectl delete configmap allure-config-ui-map --namespace allure-docker-service
+kubectl delete secret allure-secret --namespace allure-docker-service
 kubectl delete secret my-domain-com-tls --namespace allure-docker-service
 kubectl delete persistentvolumeclaim allure-persistent-volume-claim --namespace allure-docker-service
 kubectl delete persistentvolume allure-persistent-volume

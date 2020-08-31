@@ -3,6 +3,11 @@ kind: Ingress
 metadata:
   name: allure-ingress-service-load-balancer
   namespace: allure-docker-service
+  annotations:
+    #https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md#custom-max-body-size
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    #https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md#rewrite
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   tls:
     - secretName: my-domain-com-tls
@@ -12,7 +17,16 @@ spec:
     - host: my-domain.com
       http:
         paths:
-          - path: /allure-docker-service
+          - path: /allure-api/?(.*)
             backend:
               serviceName: allure-service-load-balancer
               servicePort: 6060
+          # Share your configuration if you have a better way to handle a static website
+          - path: /allure-ui/?(.*)
+            backend:
+              serviceName: allure-service-load-balancer
+              servicePort: 7070
+          - path: /?(.*)
+            backend:
+              serviceName: allure-service-load-balancer
+              servicePort: 7070

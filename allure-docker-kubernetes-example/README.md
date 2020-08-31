@@ -7,9 +7,11 @@ Table of contents
 =================
 * [USAGE](#USAGE)
     * [Creating a Namespace](#creating-a-namespace)
-    * [Creating a Config Map](#creating-a-config-map)
-    * [Creating a Persistent Volume](#creating-a-persistent-volume)
-    * [Creating a Persistent Volume Claim](#creating-a-persistent-volume-claim)
+    * [Creating a Config Map for API](#creating-a-config-map-for-api)
+    * [Creating a Secret for API](#creating-a-secret-for-api)
+    * [Creating a Config Map for UI](#creating-a-config-map-for-ui)
+    * [Creating a Persistent Volume for API](#creating-a-persistent-volume-for-api)
+    * [Creating a Persistent Volume Claim for API](#creating-a-persistent-volume-claim-for-api)
     * [Creating a Deployment](#creating-a-deployment)
     * [Creating a Service](#creating-a-service)
         * [Creating a Load Balancer Service](#creating-a-load-balancer-service)
@@ -59,16 +61,20 @@ allure-docker-service   Active    4s
 ```
 
 
-### Creating a Config Map
+### Creating a Config Map for API
 Check yaml definition here: [allure-config-map.yml](allure-config-map.yml)
 
-For this example, we are going to enable `TLS` option to use `https` protocol. Otherwise, remove that option.
+This configuration is for the API container `frankescobar/allure-docker-service`.
+
+For this example, we will enable the security `SECURITY_ENABLED` and we will enable `TLS` option to use `https` protocol. The `URL_PREFIX` is used for accessing the API application with the prefix indicated.
 ```sh
 TLS: "1"
+SECURITY_ENABLED: "1"
+URL_PREFIX: "/allure-api"
 ```
-Note: It's necessary to use `TLS` in case you expose the application publicly.
+Note: If you enable the security is necessary to use it together with `TLS` otherwise the credentials could be exposed and your security could be vulnerable.
 
-- Create a config map
+- Create a config map for API
 ```sh
 kubectl create -f allure-config-map.yml
 ```
@@ -84,7 +90,7 @@ kubectl get configmaps --namespace allure-docker-service
 Output:
 ```sh
 NAME                DATA      AGE
-allure-config-map   3         58s
+allure-config-map   5         88s
 ```
 
 - Describe configmap created
@@ -106,13 +112,111 @@ NONE
 KEEP_HISTORY:
 ----
 1
+SECURITY_ENABLED:
+----
+1
 TLS:
 ----
 1
+URL_PREFIX:
+----
+/allure-api
 Events:  <none>
 ```
 
-### Creating a Persistent Volume
+### Creating a Secret for API
+Check yaml definition here: [allure-secret.yml](allure-secret.yml)
+
+For setting the user/password for the API container. First we need to convert those values to `base64`. For example:
+```sh
+echo -n 'my_username' | base64
+echo -n 'my_password' | base64
+```
+And we will use those encoded values in the yaml:
+```sh
+SECURITY_USER: bXlfdXNlcm5hbWU=
+SECURITY_PASS: bXlfcGFzc3dvcmQ=
+```
+- Create a secret
+```sh
+kubectl create -f allure-secret.yml
+```
+Output:
+```sh
+secret/allure-secret created
+```
+
+- Get secrets
+```sh
+kubectl get secrets --namespace allure-docker-service
+```
+Output:
+```sh
+NAME                  TYPE                                  DATA      AGE
+allure-secret         Opaque                                2         25s
+```
+
+### Creating a Config Map for UI
+Check yaml definition here: [allure-config-ui-map.yml](allure-config-ui-map.yml)
+
+This configuration is for the UI container `frankescobar/allure-docker-service-ui`.
+
+For this example, the `ALLURE_DOCKER_PUBLIC_API_URL` should be a public url, remember the UI container is a `Single Page Application` and need access to a public API. In case the API use a `PREFIX` you can specify that with the `ALLURE_DOCKER_PUBLIC_API_URL_PREFIX` environment variable.
+
+The `URL_PREFIX` is used for accessing the UI application with the prefix indicated.
+
+```sh
+ALLURE_DOCKER_PUBLIC_API_URL: "https://my-domain.com"
+ALLURE_DOCKER_PUBLIC_API_URL_PREFIX: "/allure-api"
+URL_PREFIX: "/allure-ui"
+```
+
+- Create a config map for UI
+```sh
+kubectl create -f allure-config-ui-map.yml
+```
+Output:
+```sh
+configmap/allure-config-ui-map created
+```
+
+- Get configmaps
+```sh
+kubectl get configmaps --namespace allure-docker-service
+```
+Output:
+```sh
+NAME                DATA      AGE
+allure-config-map      5         12m
+allure-config-ui-map   3         11s
+```
+
+- Describe configmap created
+```sh
+kubectl describe configmap allure-config-ui-map --namespace allure-docker-service
+```
+Output:
+```sh
+Name:         allure-config-ui-map
+Namespace:    allure-docker-service
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+ALLURE_DOCKER_PUBLIC_API_URL:
+----
+https://my-domain.com
+ALLURE_DOCKER_PUBLIC_API_URL_PREFIX:
+----
+/allure-api
+URL_PREFIX:
+----
+/allure-ui
+Events:  <none>
+```
+
+### Creating a Persistent Volume for API
 Check yaml definition here: [allure-persistent-volume.yml](allure-persistent-volume.yml)
 
 If you are using a Kubernetes cloud solution, surely you don't need to create a `persistent volume` from your own, due the cloud solutions provision their own persistent volumes types.
@@ -176,7 +280,7 @@ References:
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#create-a-persistentvolume
 
 
-### Creating a Persistent Volume Claim
+### Creating a Persistent Volume Claim for API
 Check yaml definition here: [allure-persistent-volume-claim.yml](allure-persistent-volume-claim.yml)
 
 - Create a persistent volume claim
@@ -243,56 +347,77 @@ kubectl get all -o wide --namespace allure-docker-service
 ```
 Output:
 ```
-NAME                                     READY     STATUS    RESTARTS   AGE       IP          NODE             NOMINATED NODE   READINESS GATES
-pod/allure-deployment-7cd5fbf5cd-vm6jd   1/1       Running   0          6s        10.1.0.82   docker-desktop   <none>           <none>
+NAME                                     READY     STATUS    RESTARTS   AGE       IP           NODE             NOMINATED NODE   READINESS GATES
+pod/allure-deployment-778569987f-rx782   2/2       Running   0          9s        10.1.0.179   docker-desktop   <none>           <none>
 
-NAME                                READY     UP-TO-DATE   AVAILABLE   AGE       CONTAINERS   IMAGES                                    SELECTOR
-deployment.apps/allure-deployment   1/1       1            1           6s        allure       frankescobar/allure-docker-service:beta   type=app
+NAME                                READY     UP-TO-DATE   AVAILABLE   AGE       CONTAINERS         IMAGES                                                                               SELECTOR
+deployment.apps/allure-deployment   1/1       1            1           9s        allure,allure-ui   frankescobar/allure-docker-service,frankescobar/allure-docker-service-ui   type=app
 
-NAME                                           DESIRED   CURRENT   READY     AGE       CONTAINERS   IMAGES                                    SELECTOR
-replicaset.apps/allure-deployment-7cd5fbf5cd   1         1         1         6s        allure       frankescobar/allure-docker-service:beta   pod-template-hash=7cd5fbf5cd,type=app
+NAME                                           DESIRED   CURRENT   READY     AGE       CONTAINERS         IMAGES                                                                               SELECTOR
+replicaset.apps/allure-deployment-778569987f   1         1         1         9s        allure,allure-ui   frankescobar/allure-docker-service,frankescobar/allure-docker-service-ui   pod-template-hash=778569987f,type=app
 ```
 
-In this case, the pod created has this name assigned `allure-deployment-7cd5fbf5cd-vm6jd`
+In this case, the pod created has this name assigned `allure-deployment-778569987f-rx782`
 ```sh
-POD_NAME=`allure-deployment-7cd5fbf5cd-vm6jd`
+POD_NAME=`allure-deployment-778569987f-rx782`
 ```
-- Check if the application was deployed successfully in the pod
+- Check if the API application was deployed successfully in the pod
 
 ```sh
 kubectl exec -it ${POD_NAME} curl http://localhost:5050 --namespace allure-docker-service
 ```
 Output:
 ```sh
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Allure Docker Service</title>
-    <link rel="shortcut icon" href="/static/favicon">
-    <meta http-equiv="Refresh" content="0; url=/allure-docker-service/swagger"/>
+  <meta charset="UTF-8">
+  <title>Allure Docker Service</title>
+  ...
 </head>
 
 <body>
+...
 </body>
-
-</html>% 
+</html>%
 ```
 
 - See logs in real time
 ```sh
-kubectl logs -f ${POD_NAME} --namespace allure-docker-service
+kubectl logs -f ${POD_NAME} allure --namespace allure-docker-service
 ```
 Output:
 ```sh
 Not checking results automatically
 ALLURE_VERSION: 2.13.5
-Generating default report
-Creating results directory for PROJECT_ID: default
-Creating executor.json for PROJECT_ID: default
-Generating report for PROJECT_ID: default
-Report successfully generated to /app/allure-docker-api/static/projects/default/reports/latest
-Status: 200
-2020-06-23 15:51:19.455:INFO::main: Logging initialized @861ms to org.eclipse.jetty.util.log.StdErrLog
+Opening existing report
+[INFO] /app/allure-docker-api/app.py:118 Enabling TLS=1
+[INFO] /app/allure-docker-api/app.py:132 Setting URL_PREFIX=/allure-api
+[INFO] /app/allure-docker-api/app.py:140 Setting SECURITY_USER
+[INFO] /app/allure-docker-api/app.py:146 Setting SECURITY_PASS
+[INFO] /app/allure-docker-api/app.py:154 Enabling Security Login. SECURITY_ENABLED=1
+2020-08-31 09:58:13.459:INFO::main: Logging initialized @2219ms to org.eclipse.jetty.util.log.StdErrLog
+```
+
+
+- Check if the UI application was deployed successfully in the pod
+
+```sh
+kubectl exec -it ${POD_NAME} curl http://localhost:5252 --namespace allure-docker-service
+```
+Output:
+```sh
+<!doctype html><html lang="en"><head><base href="/"/><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="shortcut icon" href="./favicon.ico"><title>Allure Docker Service UI</title><script src="./env-config.js"></script><link href="./static/css/main.2eaee7e6.chunk.css" rel="stylesheet"></head><body>...</body></html>
+```
+
+- See logs in real time
+```sh
+kubectl logs -f ${POD_NAME} allure-ui --namespace allure-docker-service
+```
+Output:
+```sh
+ALLURE_DOCKER_API_URL=https://my-domain.com/allure-api/allure-docker-service
+ROUTER_BASE_NAME=/allure-ui/allure-docker-service-ui
 ```
 
 NOTE: Don't forget to replace the name of your pod in your case
@@ -321,8 +446,8 @@ kubectl get services --namespace allure-docker-service
 ```
 Output:
 ```sh
-NAME                           TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
-allure-service-load-balancer   LoadBalancer   10.108.43.57   localhost     6060:32332/TCP   8s
+NAME                           TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                         AGE
+allure-service-load-balancer   LoadBalancer   10.105.47.254   localhost     6060:31873/TCP,7070:31103/TCP   5s
 ```
 
 - Describe service created
@@ -337,18 +462,22 @@ Labels:                   <none>
 Annotations:              <none>
 Selector:                 type=app
 Type:                     LoadBalancer
-IP:                       10.108.43.57
+IP:                       10.105.47.254
 LoadBalancer Ingress:     localhost
-Port:                     <unset>  6060/TCP
+Port:                     allure-api  6060/TCP
 TargetPort:               5050/TCP
-NodePort:                 <unset>  32332/TCP
-Endpoints:                10.1.0.82:5050
+NodePort:                 allure-api  31873/TCP
+Endpoints:                10.1.0.179:5050
+Port:                     allure-ui  7070/TCP
+TargetPort:               5252/TCP
+NodePort:                 allure-ui  31103/TCP
+Endpoints:                10.1.0.179:5252
 Session Affinity:         None
 External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
-- Verify if service is working properly
+- Verify if service for API is working properly
 ```sh
 curl http://${IP_NODE}:6060 -ik
 ```
@@ -360,23 +489,50 @@ curl http://localhost:6060/ -ik
 Output:
 ```sh
 HTTP/1.1 200 OK
-Content-Length: 223
+Access-Control-Allow-Credentials: true
+Content-Length: 1684
 Content-Type: text/html; charset=utf-8
-Date: Thu, 25 Jun 2020 12:42:23 GMT
+Date: Mon, 31 Aug 2020 10:09:53 GMT
 Server: waitress
 
-<html>
-
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Allure Docker Service</title>
-    <link rel="shortcut icon" href="/static/favicon">
-    <meta http-equiv="Refresh" content="0; url=/allure-docker-service/swagger"/>
+  <meta charset="UTF-8">
+  <title>Allure Docker Service</title>
+  ...
 </head>
 
 <body>
+...
 </body>
-
 </html>%
+```
+
+- Verify if service for UI is working properly
+```sh
+curl http://${IP_NODE}:7070 -ik
+```
+or use `localhost` in case you are in the node where the pod is deployed
+
+```sh
+curl http://localhost:7070/ -ik
+```
+Output:
+```sh
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Accept-Ranges: bytes
+Cache-Control: public, max-age=0
+Last-Modified: Mon, 31 Aug 2020 07:21:02 GMT
+ETag: W/"807-17443640330"
+Content-Type: text/html; charset=UTF-8
+Content-Length: 2055
+Date: Mon, 31 Aug 2020 10:12:18 GMT
+Connection: keep-alive
+
+<!doctype html><html lang="en"><head><base href="/"/><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="shortcut icon" href="./favicon.ico"><title>Allure Docker Service UI</title><script src="./env-config.js"></script><link href="./static/css/main.2eaee7e6.chunk.css" rel="stylesheet"></head><body>...</body></html>%
 ```
 
 #### Creating a Node Port Service
@@ -399,8 +555,8 @@ kubectl get services --namespace allure-docker-service
 ```
 Output:
 ```sh
-NAME                           TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-allure-service-node-port       NodePort       10.110.92.76   <none>        2020:30008/TCP   9s
+NAME                       TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)                         AGE
+allure-service-node-port   NodePort   10.104.1.236   <none>        2020:30008/TCP,3030:30009/TCP   9s
 ```
 
 - Describe service created
@@ -415,18 +571,22 @@ Labels:                   <none>
 Annotations:              <none>
 Selector:                 type=app
 Type:                     NodePort
-IP:                       10.110.92.76
+IP:                       10.104.1.236
 LoadBalancer Ingress:     localhost
-Port:                     <unset>  2020/TCP
+Port:                     allure-api  2020/TCP
 TargetPort:               5050/TCP
-NodePort:                 <unset>  30008/TCP
-Endpoints:                10.1.0.82:5050
+NodePort:                 allure-api  30008/TCP
+Endpoints:                10.1.0.180:5050
+Port:                     allure-ui  3030/TCP
+TargetPort:               5252/TCP
+NodePort:                 allure-ui  30009/TCP
+Endpoints:                10.1.0.180:5252
 Session Affinity:         None
 External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
-- Verify if service is working properly
+- Verify if service for API is working properly
 ```sh
 curl http://${IP_NODE}:30008 -ik
 ```
@@ -437,23 +597,49 @@ curl http://localhost:30008 -ik
 Output:
 ```sh
 HTTP/1.1 200 OK
-Content-Length: 223
+Access-Control-Allow-Credentials: true
+Content-Length: 1683
 Content-Type: text/html; charset=utf-8
-Date: Thu, 25 Jun 2020 12:43:00 GMT
+Date: Mon, 31 Aug 2020 10:37:51 GMT
 Server: waitress
 
-<html>
-
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Allure Docker Service</title>
-    <link rel="shortcut icon" href="/static/favicon">
-    <meta http-equiv="Refresh" content="0; url=/allure-docker-service/swagger"/>
+  <meta charset="UTF-8">
+  <title>Allure Docker Service</title>
+  ...
 </head>
 
 <body>
+...
 </body>
-
 </html>%
+```
+
+- Verify if service for UI is working properly
+```sh
+curl http://${IP_NODE}:30009 -ik
+```
+or use `localhost` in case you are in the node where the pod is deployed
+```sh
+curl http://localhost:30009 -ik
+```
+Output:
+```sh
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Accept-Ranges: bytes
+Cache-Control: public, max-age=0
+Last-Modified: Mon, 31 Aug 2020 07:21:02 GMT
+ETag: W/"807-17443640330"
+Content-Type: text/html; charset=UTF-8
+Content-Length: 2055
+Date: Mon, 31 Aug 2020 10:39:00 GMT
+Connection: keep-alive
+
+<!doctype html><html lang="en"><head><base href="/"/><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="shortcut icon" href="./favicon.ico"><title>Allure Docker Service UI</title><script src="./env-config.js"></script><link href="./static/css/main.2eaee7e6.chunk.css" rel="stylesheet"></head><body>...</body></html>%
 ```
 
 ### Creating a SSL certificate and key
@@ -534,33 +720,57 @@ NAME                                   HOSTS           ADDRESS   PORTS     AGE
 allure-ingress-service-load-balancer   my-domain.com             80, 443   18s
 ```
 
-- Check if ingress is working
+- Check if ingress for API is working
 ```sh
-curl https://my-domain.com/allure-docker-service -ik
+curl https://my-domain.com/allure-api -ik
 ```
 Output:
 ```sh
-HTTP/2 200 
+HTTP/2 200
 server: nginx/1.19.0
-date: Thu, 25 Jun 2020 11:53:13 GMT
+date: Mon, 31 Aug 2020 10:22:50 GMT
 content-type: text/html; charset=utf-8
-content-length: 223
+content-length: 1683
+vary: Accept-Encoding
+access-control-allow-credentials: true
 strict-transport-security: max-age=15724800; includeSubDomains
 
-<html>
-
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Allure Docker Service</title>
-    <link rel="shortcut icon" href="/static/favicon">
-    <meta http-equiv="Refresh" content="0; url=/allure-docker-service/swagger"/>
+  <meta charset="UTF-8">
+  <title>Allure Docker Service</title>
+  ...
 </head>
 
 <body>
+...
 </body>
-
-</html>% 
+</html>%
 ```
 
+- Check if ingress for UI is working
+```sh
+curl https://my-domain.com/allure-ui/allure-docker-service-ui -ik
+```
+Output:
+```sh
+HTTP/2 200
+server: nginx/1.19.0
+date: Mon, 31 Aug 2020 10:24:07 GMT
+content-type: text/html; charset=UTF-8
+content-length: 2055
+vary: Accept-Encoding
+x-powered-by: Express
+accept-ranges: bytes
+cache-control: public, max-age=0
+last-modified: Mon, 31 Aug 2020 07:21:02 GMT
+etag: W/"807-17443640330"
+strict-transport-security: max-age=15724800; includeSubDomains
+
+<!doctype html><html lang="en"><head><base href="/"/><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="shortcut icon" href="./favicon.ico"><title>Allure Docker Service UI</title><script src="./env-config.js"></script><link href="./static/css/main.2eaee7e6.chunk.css" rel="stylesheet"></head><body>...</body></html>%
+```
 
 #### Creating an Ingress for Node Port
 Check yaml definition here: [allure-ingress-service-node-port.yml](allure-ingress-service-node-port.yml)
@@ -583,99 +793,81 @@ NAME                               HOSTS           ADDRESS     PORTS     AGE
 allure-ingress-service-node-port   my-domain.com   localhost   80, 443   8s
 ```
 
-- Check if ingress is working
+- Check if ingress for API is working
 ```sh
-curl https://my-domain.com/allure-docker-service -ik
+curl https://my-domain.com/allure-api -ik
 ```
 Output:
 ```sh
-HTTP/2 200 
+HTTP/2 200
 server: nginx/1.19.0
-date: Thu, 25 Jun 2020 12:27:41 GMT
+date: Mon, 31 Aug 2020 10:46:07 GMT
 content-type: text/html; charset=utf-8
-content-length: 223
+content-length: 1683
+vary: Accept-Encoding
+access-control-allow-credentials: true
 strict-transport-security: max-age=15724800; includeSubDomains
 
-<html>
-
+<!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Allure Docker Service</title>
-    <link rel="shortcut icon" href="/static/favicon">
-    <meta http-equiv="Refresh" content="0; url=/allure-docker-service/swagger"/>
+  <meta charset="UTF-8">
+  <title>Allure Docker Service</title>
+  ...
 </head>
 
 <body>
+...
 </body>
+</html>%
+```
 
-</html>% 
+- Check if ingress for UI is working
+```sh
+curl https://my-domain.com/allure-ui/allure-docker-service-ui -ik
+```
+Output:
+```sh
+HTTP/2 200
+server: nginx/1.19.0
+date: Mon, 31 Aug 2020 10:46:57 GMT
+content-type: text/html; charset=UTF-8
+content-length: 2055
+vary: Accept-Encoding
+x-powered-by: Express
+accept-ranges: bytes
+cache-control: public, max-age=0
+last-modified: Mon, 31 Aug 2020 07:21:02 GMT
+etag: W/"807-17443640330"
+strict-transport-security: max-age=15724800; includeSubDomains
+
+<!doctype html><html lang="en"><head><base href="/"/><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="shortcut icon" href="./favicon.ico"><title>Allure Docker Service UI</title><script src="./env-config.js"></script><link href="./static/css/main.2eaee7e6.chunk.css" rel="stylesheet"></head><body>...</body></html>%
 ```
 
 ### Using Application Deployed
 You can start using `Allure Docker Service` in Kubernetes like this:
 ```sh
-curl https://my-domain.com/allure-docker-service/version -ik
+curl https://my-domain.com/allure-api/version -ik
 ```
 Output:
 ```sh
 HTTP/2 200
 server: nginx/1.19.0
-date: Thu, 25 Jun 2020 15:13:16 GMT
+date: Mon, 31 Aug 2020 10:24:53 GMT
 content-type: application/json
 content-length: 86
+access-control-allow-credentials: true
 strict-transport-security: max-age=15724800; includeSubDomains
 
 {"data":{"version":"2.13.5"},"meta_data":{"message":"Version successfully obtained"}}
 ```
+Check the Swagger Documentation in a browser wit the url: https://my-domain.com/allure-api
+
+Check scripts https://github.com/fescobar/allure-docker-service/tree/beta#send-results-through-api where the `allure server url` would be `https://my-domain.com` and the prefix `/allure-api`
 
 
-```sh
-curl https://my-domain.com/allure-docker-service/projects -ik
-```
-```sh
-HTTP/2 200
-server: nginx/1.19.0
-date: Thu, 25 Jun 2020 15:14:19 GMT
-content-type: application/json
-content-length: 162
-strict-transport-security: max-age=15724800; includeSubDomains
-
-{"data":{"projects":{"default":{"uri":"https://my-domain.com/allure-docker-service/projects/default"}}},"meta_data":{"message":"Projects successfully obtained"}}
-```
-
-Check scripts https://github.com/fescobar/allure-docker-service/tree/beta#send-results-through-api where the `allure server url` would be `https://my-domain.com`
-
-Note:
-- If when you try to request the endpoint `POST /send-results` returns `413 Request Entity Too Large` like this:
-```sh
-HTTP/2 413
-server: nginx/1.19.0
-date: Thu, 25 Jun 2020 13:22:39 GMT
-content-type: text/html
-content-length: 183
-strict-transport-security: max-age=15724800; includeSubDomains
-
-<html>
-<head><title>413 Request Entity Too Large</title></head>
-<body>
-<center><h1>413 Request Entity Too Large</h1></center>
-<hr><center>nginx/1.19.0</center>
-</body>
-</html>
-```
-You have to setup your ingress controller to increase the body size
-
-If you are using `ingress-nginx` controller:
-```sh
-kubectl edit configmap ingress-nginx-controller --namespace ingress-nginx
-```
-Add the next configuration"
-```sh
-data:
-  proxy-body-size: "500m"
-```
-References:
-- https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#custom-max-body-size
-- https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md#custom-max-body-size
+Also, you can start using `Allure Docker Service UI` opening a browser this url: https://my-domain.com/allure-ui/allure-docker-service-ui
 
 
 ### Removing all allure objects created

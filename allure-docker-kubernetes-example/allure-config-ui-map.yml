@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: allure-config-ui-map
+  namespace: allure-docker-service
+data:
+  ALLURE_DOCKER_PUBLIC_API_URL: "https://my-domain.com"
+  ALLURE_DOCKER_PUBLIC_API_URL_PREFIX: "/allure-api"
+  URL_PREFIX: "/allure-ui"
