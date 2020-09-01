@@ -22,9 +22,22 @@ spec:
           envFrom:
             - configMapRef:
                 name: allure-config-map
+            - secretRef:
+                name: allure-secret
           volumeMounts:
             - name: reports-volume
               mountPath: /app/projects
+        - name: allure-ui
+          image: 'frankescobar/allure-docker-service-ui'
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5252
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          envFrom:
+            - configMapRef:
+                name: allure-config-ui-map
       volumes:
         - name: reports-volume
           persistentVolumeClaim:

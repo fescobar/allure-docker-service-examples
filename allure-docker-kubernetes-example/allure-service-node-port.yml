@@ -6,8 +6,13 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: 2020
+    - name: allure-api
+      port: 2020
       targetPort: 5050
       nodePort: 30008
+    - name: allure-ui
+      port: 3030
+      targetPort: 5252
+      nodePort: 30009
   selector:
     type: app
