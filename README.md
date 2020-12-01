@@ -13,6 +13,7 @@
 - Behave --> [allure-docker-python-behave-example](allure-docker-python-behave-example)
 - PyTest --> [allure-docker-python-pytest-example](allure-docker-python-pytest-example)
 - SpecFlow --> [AllureDockerCSharpExample](AllureDockerCSharpExample)
+- SpecFlow3 --> [AllureDockerCSharpSpecFlow3Example](AllureDockerCSharpSpecFlow3Example)
 
 See documentation here:
 - https://github.com/fescobar/allure-docker-service
