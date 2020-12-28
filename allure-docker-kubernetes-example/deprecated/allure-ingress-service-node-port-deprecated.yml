@@ -1,7 +1,7 @@
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: allure-ingress-service-load-balancer
+  name: allure-ingress-service-node-port
   namespace: allure-docker-service
   annotations:
     #https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md#custom-max-body-size
@@ -18,24 +18,15 @@ spec:
       http:
         paths:
           - path: /allure-api/?(.*)
-            pathType: Prefix
             backend:
-              service:
-                name: allure-service-load-balancer
-                port:
-                  number: 6060
+              serviceName: allure-service-node-port
+              servicePort: 2020
           # Share your configuration if you have a better way to handle a static website
           - path: /allure-ui/?(.*)
-            pathType: Prefix
             backend:
-              service:
-                name: allure-service-load-balancer
-                port:
-                  number: 7070
+              serviceName: allure-service-node-port
+              servicePort: 3030
           - path: /?(.*)
-            pathType: Prefix
             backend:
-              service:
-                name: allure-service-load-balancer
-                port:
-                  number: 7070
+              serviceName: allure-service-node-port
+              servicePort: 3030

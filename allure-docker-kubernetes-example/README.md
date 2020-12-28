@@ -127,7 +127,7 @@ Events:  <none>
 ### Creating a Secret for API
 Check yaml definition here: [allure-secret.yml](allure-secret.yml)
 
-For setting the user/password for the API container. First we need to convert those values to `base64`. For example:
+For setting the `ADMIN` user/password for the API container. First we need to convert those values to `base64`. For example:
 ```sh
 echo -n 'my_username' | base64
 echo -n 'my_password' | base64
@@ -137,6 +137,17 @@ And we will use those encoded values in the yaml:
 SECURITY_USER: bXlfdXNlcm5hbWU=
 SECURITY_PASS: bXlfcGFzc3dvcmQ=
 ```
+Also, we are going to define the `VIEWER` user/password
+```sh
+echo -n 'view_user' | base64
+echo -n 'view_pass' | base64
+```
+and place them in the yaml too
+```sh
+SECURITY_VIEWER_USER: dmlld191c2Vy
+SECURITY_VIEWER_PASS: dmlld19wYXNz
+```
+
 - Create a secret
 ```sh
 kubectl create -f allure-secret.yml
@@ -153,7 +164,7 @@ kubectl get secrets --namespace allure-docker-service
 Output:
 ```sh
 NAME                  TYPE                                  DATA      AGE
-allure-secret         Opaque                                2         25s
+allure-secret         Opaque                                4         25s
 ```
 
 ### Creating a Config Map for UI
@@ -389,12 +400,16 @@ kubectl logs -f ${POD_NAME} allure --namespace allure-docker-service
 Output:
 ```sh
 Not checking results automatically
-ALLURE_VERSION: 2.13.5
+ALLURE_VERSION: 2.13.7
 Opening existing report
-[INFO] /app/allure-docker-api/app.py:118 Enabling TLS=1
-[INFO] /app/allure-docker-api/app.py:132 Setting URL_PREFIX=/allure-api
-[INFO] /app/allure-docker-api/app.py:140 Setting SECURITY_USER
-[INFO] /app/allure-docker-api/app.py:146 Setting SECURITY_PASS
+[INFO] /app/allure-docker-api/app.py:143 Enabling TLS=1
+[INFO] /app/allure-docker-api/app.py:157 Setting URL_PREFIX=/allure-api
+[INFO] /app/allure-docker-api/app.py:172 Setting SECURITY_USER
+[INFO] /app/allure-docker-api/app.py:178 Setting SECURITY_PASS
+[INFO] /app/allure-docker-api/app.py:184 Setting SECURITY_VIEWER_USER
+[INFO] /app/allure-docker-api/app.py:190 Setting SECURITY_VIEWER_PASS
+[INFO] /app/allure-docker-api/app.py:199 Enabling Security Login. SECURITY_ENABLED=1
+
 [INFO] /app/allure-docker-api/app.py:154 Enabling Security Login. SECURITY_ENABLED=1
 2020-08-31 09:58:13.459:INFO::main: Logging initialized @2219ms to org.eclipse.jetty.util.log.StdErrLog
 ```
@@ -416,6 +431,7 @@ kubectl logs -f ${POD_NAME} allure-ui --namespace allure-docker-service
 ```
 Output:
 ```sh
+ALLURE_UI_VERSION: 7.0.1
 ALLURE_DOCKER_API_URL=https://my-domain.com/allure-api/allure-docker-service
 ROUTER_BASE_NAME=/allure-ui/allure-docker-service-ui
 ```
@@ -650,6 +666,8 @@ For this example, we are going to create a certificate/key for domain `my-domain
 ```sh
 openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=my-domain.com"
 ```
+Note: If you use `Git Bash` use double slashes at the beginning `-subj "//CN=my-domain.com"`
+
 Output
 ```sh
 Generating a 4096 bit RSA private key
@@ -682,13 +700,16 @@ my-domain-com-tls           kubernetes.io/tls                          2        
 ### Creating an Ingress
 - As pre-requisite you need to have an Ingress Controller to be able to use ingress. 
 For example, you can install `ingress-nginx` --> https://kubernetes.github.io/ingress-nginx/deploy/
+If you are testing in a `windows` run the yaml for Mac https://kubernetes.github.io/ingress-nginx/deploy/#docker-for-mac
 
 
 - If you are using kubernetes locally, as you don't have a DNS you can edit the file `/etc/hosts`
 ```sh
 sudo vi /etc/hosts
 ```
-and add the next line at the end
+Note: If you use `Windows` the path is this one `C:\Windows\System32\drivers\etc\hosts`
+
+then add the next line at the end
 ```sh
 127.0.0.1   my-domain.com
 ```
@@ -860,7 +881,7 @@ content-length: 86
 access-control-allow-credentials: true
 strict-transport-security: max-age=15724800; includeSubDomains
 
-{"data":{"version":"2.13.5"},"meta_data":{"message":"Version successfully obtained"}}
+{"data":{"version":"2.13.7"},"meta_data":{"message":"Version successfully obtained"}}
 ```
 Check the Swagger Documentation in a browser wit the url: https://my-domain.com/allure-api
 
