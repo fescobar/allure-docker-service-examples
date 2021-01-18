@@ -90,7 +90,7 @@ kubectl get configmaps --namespace allure-docker-service
 Output:
 ```sh
 NAME                DATA      AGE
-allure-config-map   5         88s
+allure-config-map   6         88s
 ```
 
 - Describe configmap created
@@ -110,6 +110,9 @@ CHECK_RESULTS_EVERY_SECONDS:
 ----
 NONE
 KEEP_HISTORY:
+----
+0
+MAKE_VIEWER_ENDPOINTS_PUBLIC:
 ----
 1
 SECURITY_ENABLED:

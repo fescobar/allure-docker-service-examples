@@ -9,3 +9,4 @@ data:
   URL_PREFIX: "/allure-api"
   TLS: "1"
   SECURITY_ENABLED: "1"
+  MAKE_VIEWER_ENDPOINTS_PUBLIC: "0"
