@@ -54,6 +54,10 @@ def test_broken_scenario():
 @pytest.fixture(autouse=True)
 def hooks():
     # set up
+    f = open("./allure-results/environment.properties", "w+")
+    f.write("myvar=myvalue\n")
+    f.write("myvar2=myvalue2\n")
+    f.close()
 
     yield
     # tear down
