@@ -10,15 +10,16 @@ spec:
       labels:
         type: app
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: allure
           image: 'frankescobar/allure-docker-service'
           imagePullPolicy: Always
           ports:
             - containerPort: 5050
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
           envFrom:
             - configMapRef:
                 name: allure-config-map
@@ -32,9 +33,6 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 5252
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
           envFrom:
             - configMapRef:
                 name: allure-config-ui-map
