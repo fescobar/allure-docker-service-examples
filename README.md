@@ -24,3 +24,4 @@ See documentation here:
 - Azure Container Instances --> https://github.com/khanzzirfan/jsonserver-mockend/blob/main/azure-aci-template.json
 - AWS Terraform --> https://github.com/Idea-Pool/aws-allure
 - GitHub Actions --> https://github.com/unickq/send-to-allure-docker-service-action
+- Allure Operator --> https://github.com/mting806/allure-operator
