@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configMapGenerator:
+  - name: allure-api-env
+    envs:
+      - api.env
+
+secretGenerator:
+  - name: allure-api-secret
+    envs:
+      - secret.env

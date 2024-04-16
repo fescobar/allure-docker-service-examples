@@ -2,6 +2,7 @@
 ## OFFICIAL
 
 - Kubernetes --> [allure-docker-kubernetes-example](allure-docker-kubernetes-example)
+- k8s Kustomize --> [allure-docker-kustomize-example](allure-docker-kustomize-example)
 
 - MultiProject --> [allure-docker-multi-project-example](allure-docker-multi-project-example)
 
