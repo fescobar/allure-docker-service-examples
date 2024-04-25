@@ -36,4 +36,12 @@ resources:
 patches:
   - path: patches/api-secret.yaml
   # your other patches here
+
+images:
+  - name: allure-api-image
+    newName: frankescobar/allure-docker-service
+    newTag: latest
+  - name: allure-ui-image
+    newName: frankescobar/allure-docker-service-ui
+    newTag: latest
 ```
