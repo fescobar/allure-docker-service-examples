@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: allure-api
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: allure-api
+    spec:
+      initContainers:
+        - name: volume-permissions
+          image: busybox
+          command: ["sh", "-c", "chown -R 1000:1000 /app/projects"]
+          volumeMounts:
+            - mountPath: /app/projects
+              name: reports-volume
+      containers:
+        - name: allure-api
+          image: allure-api-image
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          ports:
+            - containerPort: 5050
+          envFrom:
+            - configMapRef:
+                name: allure-api-env
+            - secretRef:
+                name: allure-api-secret
+          volumeMounts:
+            - name: reports-volume
+              mountPath: /app/projects
+      volumes:
+        - name: reports-volume
+          persistentVolumeClaim:
+            claimName: allure-pvc

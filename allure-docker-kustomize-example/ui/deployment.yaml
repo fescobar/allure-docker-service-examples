@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: allure-ui
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: allure-ui
+    spec:
+      containers:
+        - name: allure-ui
+          image: allure-ui-image
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5252
+          envFrom:
+            - configMapRef:
+                name: allure-ui-env

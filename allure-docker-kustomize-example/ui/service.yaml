@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: allure-ui
+spec:
+  type: NodePort
+  ports:
+    - name: allure-ui
+      port: 3030
+      targetPort: 5252
