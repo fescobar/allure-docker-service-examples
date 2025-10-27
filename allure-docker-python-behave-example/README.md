@@ -9,10 +9,27 @@ https://www.python.org/downloads/
 python3 --version
 ```
 - Go to project
+
+- Create virtual environment named `.venv`
+```sh
+python -m venv .venv
+ ```
+
+- Activate virtual environment
+Windows GitBash:
+```sh
+source .venv/Scripts/activate
+ ```
+
+Linux:
+```sh
+source .venv/bin/activate
+ ```
+
 - Install dependencies
 
 ```sh
-pip3 install -r requirements.txt
+pip install -r requirements.txt
  ```
 
 ## USAGE
